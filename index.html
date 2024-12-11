@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Ganancias - Quick Trade</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Incluir Chart.js desde un CDN -->
+    <style>
+        /* Estilos generales */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow-x: hidden; /* Evita el scroll horizontal */
+        }
+
+        /* Video de fondo */
+        #video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1; /* Asegura que el video quede en segundo plano */
+        }
+
+        /* Contenedor del cardview */
+        .container {
+            width: 50%;
+            max-width: 600px;
+            background-color: rgba(28, 28, 28, 0.85); /* Fondo oscuro con opacidad para ver el video detrás */
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            position: relative;
+            color: white; /* Texto blanco */
+            text-align: center;
+            z-index: 1;
+            border: 2px solid #FFD700; /* Borde dorado */
+            margin: 20px auto; /* Asegura que el cardview esté centrado y con margen */
+        }
+
+        h1 {
+            color: #FFD700; /* Color dorado */
+            font-family: 'Arial', sans-serif;
+            font-size: 36px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            color: #ccc; /* Gris claro */
+            font-weight: bold;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background-color: #222; /* Fondo oscuro para inputs */
+            color: white;
+            font-size: 16px;
+        }
+
+        input:focus, select:focus, button:focus {
+            border-color: #FFD700; /* Borde dorado al hacer foco */
+            outline: none;
+        }
+
+        /* Animación de botones */
+        button {
+            background-color: #FFD700; /* Botón dorado */
+            color: #121212; /* Texto oscuro */
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease; /* Transición suave */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Efecto de animación cuando se pasa el mouse por encima */
+        button:hover {
+            background-color: #FFC107; /* Botón dorado con hover más claro */
+            transform: scale(1.1); /* Aumenta el tamaño del botón */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Sombra más intensa */
+        }
+
+        button:active {
+            transform: scale(0.98); /* Reduce ligeramente el tamaño al hacer clic */
+        }
+
+        .result {
+            background-color: #333; /* Fondo gris oscuro para los resultados */
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .month-result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #444; /* Fondo más oscuro para cada mes */
+            border-radius: 6px;
+        }
+
+        .month-result span {
+            font-weight: bold;
+            color: #FFD700; /* Color dorado para resaltar las cantidades */
+        }
+
+        /* Estilo para las notas */
+        .notes {
+            width: 50%;
+            max-width: 600px;
+            background-color: rgba(28, 28, 28, 0.9); /* Fondo oscuro con mayor opacidad */
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            color: white;
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.6;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .notes:hover {
+            transform: scale(1.03); /* Le da un pequeño efecto de aumento al pasar el mouse */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8); /* Aumenta la sombra para hacerlo más llamativo */
+        }
+
+        .notes p {
+            margin: 10px 0;
+        }
+
+        .notes p strong {
+            color: #FFD700; /* Resalta los encabezados con color dorado */
+            font-weight: bold;
+        }
+
+        /* Estilos para las diferentes cuentas */
+        .notes p:before {
+            content: "💰 "; /* Icono de dinero al inicio de cada cuenta */
+            font-size: 20px;
+            color: #FFD700; /* Dorado para los íconos */
+        }
+
+        /* Estilo para las cuentas específicas */
+        .account {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .account .account-name {
+            color: #FFD700; /* Color dorado para el nombre de la cuenta */
+        }
+
+        .account .account-details {
+            color: #ccc; /* Gris claro para los detalles */
+        }
+    </style>
+</head>
+<body>
+    <!-- Video de fondo -->
+    <video id="video-background" autoplay muted loop>
+        <source src="https://videos.pexels.com/video-files/27034803/12052488_2560_1440_30fps.mp4" type="video/mp4">
+        Tu navegador no soporta el video.
+    </video>
+
+    <!-- Contenedor principal -->
+    <div class="content-wrapper">
+        <!-- Notas sobre las cuentas -->
+        <div class="notes">
+            <p class="account"><strong class="account-name">Cuenta Estándar:</strong> Ganancia: 10%</p>
+            <p class="account"><strong class="account-name">Cuenta VIP:</strong> Ganancia: 15%</p>
+            <p class="account"><strong class="account-name">Cuenta Gold:</strong> Ganancia: 20%</p>
+            <p class="account"><strong class="account-name">Cuenta Platino:</strong> Ganancia: 25%</p>
+            <p class="account"><strong class="account-name">Cuenta Super Prime:</strong> Ganancia: 35%</p>
+        </div>
+
+        <div class="container">
+            <h1>Calculadora de Ganancias - Quick Trade</h1>
+            <!-- Input para monto inicial -->
+            <label for="monto">Monto Inicial:</label>
+            <input type="number" id="monto" placeholder="Ingrese el monto inicial" required>
+            <!-- Input para porcentaje de ganancia mensual -->
+            <label for="ganancia">Ganancia mensual (%)</label>
+            <input type="number" id="ganancia" placeholder="Porcentaje de ganancia mensual" required>
+            <!-- Botón para calcular -->
+            <button onclick="calcularGanancias()">Calcular</button>
+            <!-- Resultados -->
+            <div class="result" id="resultados" style="display: none;">
+                <h3>Resultados:</h3>
+                <p id="gananciaMensual"></p>
+                <canvas id="gananciasChart" width="400" height="200"></canvas> <!-- Canvas para la gráfica -->
+                <div id="resultadosMensuales"></div> <!-- Aquí se mostrarán las ganancias mensuales -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para calcular las ganancias
+        function calcularGanancias() {
+            const monto = parseFloat(document.getElementById('monto').value);
+            const gananciaMensual = parseFloat(document.getElementById('ganancia').value) / 100;
+            
+            if (isNaN(monto) || isNaN(gananciaMensual)) {
+                alert("Por favor, ingresa valores válidos para el monto y la ganancia.");
+                return;
+            }
+
+            // Variables para el cálculo de ganancias
+            let total = monto;
+            let ganancias = [];
+            let gananciasMensuales = [];
+            let mes = new Date();
+            mes.setMonth(mes.getMonth() + 1); // Empezamos desde el mes siguiente
+            const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            
+            for (let i = 0; i < 12; i++) {
+                let ganancia = total * gananciaMensual;
+                total += ganancia; // Agrega la ganancia mensual al total
+                ganancias.push(total); // Guarda el total después de la ganancia mensual
+                gananciasMensuales.push(`Mes ${meses[i]}: $${total.toFixed(2)}`);
+            }
+
+            // Mostrar los resultados
+            document.getElementById('resultados').style.display = 'block';
+            document.getElementById('gananciaMensual').textContent = `Ganancia mensual estimada: $${(monto * gananciaMensual).toFixed(2)}`;
+
+            // Crear la gráfica usando Chart.js
+            const ctx = document.getElementById('gananciasChart').getContext('2d');
+            const gananciasChart = new Chart(ctx, {
+                type: 'bar', // Tipo de gráfica (barra)
+                data: {
+                    labels: meses, // Meses en español
+                    datasets: [{
+                        label: 'Ganancia Total por Mes',
+                        data: ganancias, // Datos de las ganancias
+                        backgroundColor: '#FFD700', // Color de las barras
+                        borderColor: '#FFC107', // Color del borde
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Mostrar las ganancias mensuales
+            let resultadosMensualesHTML = "<h4>Ganancias Mensuales:</h4>";
+            gananciasMensuales.forEach(function(ganancia) {
+                resultadosMensualesHTML += `<div class="month-result"><span>${ganancia}</span></div>`;
+            });
+            document.getElementById('resultadosMensuales').innerHTML = resultadosMensualesHTML;
+        }
+    </script>
+</body>
+</html>
